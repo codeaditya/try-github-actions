@@ -34,7 +34,11 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $p = "$env:USERPROFILE\.hermes\hermes-agent"
+          $p = if ($env:HERMES_HOME) {
+                 Join-Path $env:HERMES_HOME "hermes-agent"
+               } else {
+                 Join-Path $env:LOCALAPPDATA "hermes\hermes-agent"
+               }
           if (-not (Test-Path "$p\.git")) { Write-Error "clone missing"; exit 1 }
           Write-Host "repo present: $(git -C $p rev-parse HEAD)"
           & "$p\venv\Scripts\hermes.exe" --version

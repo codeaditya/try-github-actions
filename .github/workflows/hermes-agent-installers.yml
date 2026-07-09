@@ -42,3 +42,45 @@ jobs:
           if (-not (Test-Path "$p\.git")) { Write-Error "clone missing"; exit 1 }
           Write-Host "repo present: $(git -C $p rev-parse HEAD)"
           & "$p\venv\Scripts\hermes.exe" --version
+
+  test-local-installers:
+    name: Local install on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Run local install.sh (Ubuntu)
+        if: runner.os != 'Windows'
+        run: bash hermes-agent/scripts/install.sh
+
+      - name: Run local install.ps1 (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: iex (Get-Content -Raw hermes-agent/scripts/install.ps1)
+
+      # Verifies the clone actually succeeded — this is the path that
+      # exercises the SSH → HTTPS fallback (no GitHub key on the runner).
+      - name: Verify clone (Ubuntu)
+        if: runner.os != 'Windows'
+        run: |
+          test -d "$HOME/.hermes/hermes-agent/.git" || { echo "clone missing"; exit 1; }
+          echo "repo present: $(git -C "$HOME/.hermes/hermes-agent" rev-parse HEAD)"
+          "$HOME/.hermes/hermes-agent/venv/bin/hermes" --version
+
+      - name: Verify clone (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $p = if ($env:HERMES_HOME) {
+                 Join-Path $env:HERMES_HOME "hermes-agent"
+               } else {
+                 Join-Path $env:LOCALAPPDATA "hermes\hermes-agent"
+               }
+          if (-not (Test-Path "$p\.git")) { Write-Error "clone missing"; exit 1 }
+          Write-Host "repo present: $(git -C $p rev-parse HEAD)"
+          & "$p\venv\Scripts\hermes.exe" --version

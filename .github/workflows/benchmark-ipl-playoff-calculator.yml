@@ -129,7 +129,7 @@ jobs:
       # Install hyperfine
       # ─────────────────────────────────────────────────────────────────
       - name: Install hyperfine
-        run: cargo install hyperfine
+        run: cargo install --locked hyperfine
 
       # ─────────────────────────────────────────────────────────────────
       # Benchmarks
@@ -137,23 +137,23 @@ jobs:
       - name: Benchmark DFS (25 remaining)
         run: |
           hyperfine --warmup 1 --runs 5 \
-            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-default_profile tests/fixtures/valid_25_remaining.txt --algo=dfs' \
-            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat tests/fixtures/valid_25_remaining.txt --algo=dfs' \
-            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-codegen-units_1 tests/fixtures/valid_25_remaining.txt --algo=dfs' \
-            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat__codegen-units_1 tests/fixtures/valid_25_remaining.txt --algo=dfs'
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-default_profile${{ steps.vars.outputs.ext }} tests/fixtures/valid_25_remaining.txt --algo=dfs' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat${{ steps.vars.outputs.ext }} tests/fixtures/valid_25_remaining.txt --algo=dfs' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-codegen-units_1${{ steps.vars.outputs.ext }} tests/fixtures/valid_25_remaining.txt --algo=dfs' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat__codegen-units_1${{ steps.vars.outputs.ext }} tests/fixtures/valid_25_remaining.txt --algo=dfs'
 
       - name: Benchmark DP (25 remaining)
         run: |
           hyperfine --warmup 1 --runs 5 \
-            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-default_profile tests/fixtures/valid_25_remaining.txt --algo=dp' \
-            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat tests/fixtures/valid_25_remaining.txt --algo=dp' \
-            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-codegen-units_1 tests/fixtures/valid_25_remaining.txt --algo=dp' \
-            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat__codegen-units_1 tests/fixtures/valid_25_remaining.txt --algo=dp'
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-default_profile${{ steps.vars.outputs.ext }} tests/fixtures/valid_25_remaining.txt --algo=dp' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat${{ steps.vars.outputs.ext }} tests/fixtures/valid_25_remaining.txt --algo=dp' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-codegen-units_1${{ steps.vars.outputs.ext }} tests/fixtures/valid_25_remaining.txt --algo=dp' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat__codegen-units_1${{ steps.vars.outputs.ext }} tests/fixtures/valid_25_remaining.txt --algo=dp'
 
       - name: Benchmark DP (40 remaining)
         run: |
           hyperfine --warmup 1 --runs 5 \
-            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-default_profile tests/fixtures/valid_40_remaining.txt --algo=dp' \
-            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat tests/fixtures/valid_40_remaining.txt --algo=dp' \
-            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-codegen-units_1 tests/fixtures/valid_40_remaining.txt --algo=dp' \
-            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat__codegen-units_1 tests/fixtures/valid_40_remaining.txt --algo=dp'
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-default_profile${{ steps.vars.outputs.ext }} tests/fixtures/valid_40_remaining.txt --algo=dp' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat${{ steps.vars.outputs.ext }} tests/fixtures/valid_40_remaining.txt --algo=dp' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-codegen-units_1${{ steps.vars.outputs.ext }} tests/fixtures/valid_40_remaining.txt --algo=dp' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat__codegen-units_1${{ steps.vars.outputs.ext }} tests/fixtures/valid_40_remaining.txt --algo=dp'

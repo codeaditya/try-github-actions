@@ -1,0 +1,159 @@
+name: Benchmark IPL Playoff Calculator
+
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  benchmark:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+          - macos-26
+          - macos-26-intel
+          - windows-2025
+          - windows-11-vs2026-arm
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: codeaditya/ipl_playoff_calculator
+
+      - name: Detect target triple & extension
+        id: vars
+        run: |
+          TRIPLE=$(rustc -vV | sed -n 's/^host: //p')
+          echo "triple=$TRIPLE" >> "$GITHUB_OUTPUT"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            echo "ext=.exe" >> "$GITHUB_OUTPUT"
+          else
+            echo "ext=" >> "$GITHUB_OUTPUT"
+          fi
+    
+      # ─────────────────────────────────────────────────────────────────
+      # Tests
+      # ─────────────────────────────────────────────────────────────────
+      - name: Run tests
+        run: cargo test
+
+      # ─────────────────────────────────────────────────────────────────
+      # Build 1 — default release profile
+      # ─────────────────────────────────────────────────────────────────
+      - name: Build (default)
+        run: cargo build --release
+
+      - name: Rename binary (default)
+        run: |
+          mv "target/release/ipl_playoff_calculator${{ steps.vars.outputs.ext }}" \
+             "target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-default_profile${{ steps.vars.outputs.ext }}"
+
+      - name: Upload artifact (default)
+        uses: actions/upload-artifact@v7
+        with:
+          name: ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-default_profile
+          path: target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-default_profile${{ steps.vars.outputs.ext }}
+          archive: false
+          if-no-files-found: error
+
+      # ─────────────────────────────────────────────────────────────────
+      # Build 2 — lto = "fat"
+      # ─────────────────────────────────────────────────────────────────
+      - name: Build (lto=fat)
+        run: cargo build --release --config 'profile.release.lto="fat"'
+
+      - name: Rename binary (lto=fat)
+        run: |
+          mv "target/release/ipl_playoff_calculator${{ steps.vars.outputs.ext }}" \
+             "target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat${{ steps.vars.outputs.ext }}"
+
+      - name: Upload artifact (lto=fat)
+        uses: actions/upload-artifact@v7
+        with:
+          name: ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat
+          path: target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat${{ steps.vars.outputs.ext }}
+          archive: false
+          if-no-files-found: error
+
+      # ─────────────────────────────────────────────────────────────────
+      # Build 3 — codegen-units = 1
+      # ─────────────────────────────────────────────────────────────────
+      - name: Build (codegen-units=1)
+        run: cargo build --release --config 'profile.release.codegen-units=1'
+
+      - name: Rename binary (codegen-units=1)
+        run: |
+          mv "target/release/ipl_playoff_calculator${{ steps.vars.outputs.ext }}" \
+             "target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-codegen-units_1${{ steps.vars.outputs.ext }}"
+
+      - name: Upload artifact (codegen-units=1)
+        uses: actions/upload-artifact@v7
+        with:
+          name: ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-codegen-units_1
+          path: target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-codegen-units_1${{ steps.vars.outputs.ext }}
+          archive: false
+          if-no-files-found: error
+
+      # ─────────────────────────────────────────────────────────────────
+      # Build 4 — lto = "fat", codegen-units = 1
+      # ─────────────────────────────────────────────────────────────────
+      - name: Build (lto=fat, codegen-units=1)
+        run: |
+          cargo build --release \
+            --config 'profile.release.lto="fat"' \
+            --config 'profile.release.codegen-units=1'
+
+      - name: Rename binary (lto=fat, codegen-units=1)
+        run: |
+          mv "target/release/ipl_playoff_calculator${{ steps.vars.outputs.ext }}" \
+             "target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat__codegen-units_1${{ steps.vars.outputs.ext }}"
+
+      - name: Upload artifact (lto=fat, codegen-units=1)
+        uses: actions/upload-artifact@v7
+        with:
+          name: ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat__codegen-units_1
+          path: target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat__codegen-units_1${{ steps.vars.outputs.ext }}
+          archive: false
+          if-no-files-found: error
+
+      # ─────────────────────────────────────────────────────────────────
+      # Install hyperfine
+      # ─────────────────────────────────────────────────────────────────
+      - name: Install hyperfine
+        run: cargo install hyperfine
+
+      # ─────────────────────────────────────────────────────────────────
+      # Benchmarks
+      # ─────────────────────────────────────────────────────────────────
+      - name: Benchmark DFS (25 remaining)
+        run: |
+          hyperfine --warmup 1 --runs 5 \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-default_profile tests/fixtures/valid_25_remaining.txt --algo=dfs' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat tests/fixtures/valid_25_remaining.txt --algo=dfs' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-codegen-units_1 tests/fixtures/valid_25_remaining.txt --algo=dfs' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat__codegen-units_1 tests/fixtures/valid_25_remaining.txt --algo=dfs'
+
+      - name: Benchmark DP (25 remaining)
+        run: |
+          hyperfine --warmup 1 --runs 5 \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-default_profile tests/fixtures/valid_25_remaining.txt --algo=dp' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat tests/fixtures/valid_25_remaining.txt --algo=dp' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-codegen-units_1 tests/fixtures/valid_25_remaining.txt --algo=dp' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat__codegen-units_1 tests/fixtures/valid_25_remaining.txt --algo=dp'
+
+      - name: Benchmark DP (40 remaining)
+        run: |
+          hyperfine --warmup 1 --runs 5 \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-default_profile tests/fixtures/valid_40_remaining.txt --algo=dp' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat tests/fixtures/valid_40_remaining.txt --algo=dp' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-codegen-units_1 tests/fixtures/valid_40_remaining.txt --algo=dp' \
+            'target/release/ipl_playoff_calculator-${{ steps.vars.outputs.triple }}-lto_fat__codegen-units_1 tests/fixtures/valid_40_remaining.txt --algo=dp'
